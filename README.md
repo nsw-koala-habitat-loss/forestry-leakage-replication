@@ -86,7 +86,7 @@ forestry_leakage_rep/
 │   ├── 02_matching_pairing.R      [Reference] Propensity-score matching (HPC)
 │   ├── 03_matching_estimation.R   [Reference] BACI estimation via INLA (HPC)
 │   ├── 04_process_results.R       [Reference] Aggregate model outputs
-│   └��─ 05_replicate_figures.R     ← START HERE: generate all figures
+│   └-─ 05_replicate_figures.R     ← START HERE: generate all figures
 │
 ├── data/
 │   ├── processed_data_for_plotting.RData    Pre-computed model outputs (103 MB)
@@ -202,4 +202,4 @@ If you use this code or data, please cite:
 
 ## Contact
 
-For questions about the code or data, please contact the corresponding author or open an issue on the associated repository.
+For questions about the code or data, please contact the corresponding author or open an issue on the associated repository (frankie.cho@qut.edu.au)
