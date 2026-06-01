@@ -40,6 +40,7 @@ if (has_ggmagnify) {
 
 source("scripts/config.R")
 load(file.path(DATA_DIR, "processed_data_for_plotting.RData"))
+load(file.path(DATA_DIR, "nsw_aus_borders.RData"))
 
 # ── Theme helper ──────────────────────────────────────────────────────────────
 plot_tag_theme <- function() {
@@ -427,9 +428,9 @@ leakage_sf_map <- function(specified_run, range = c(-0.02, 0.02)) {
     )
 }
 
-leakage_sf_buffer_plt <- leakage_sf_map("buffer", c(-1.1, 1.1)) +
+leakage_sf_buffer_plt <- leakage_sf_map("Leakage to Private Lands", c(-1.1, 1.1)) +
   labs(title = "Leakage effect to Private Lands")
-leakage_sf_neighbour_plt <- leakage_sf_map("neighbour", c(-1.1, 1.1)) +
+leakage_sf_neighbour_plt <- leakage_sf_map("Leakage to State Forests", c(-1.1, 1.1)) +
   labs(title = "Leakage effect to State Forests")
 
 leakage_sf_comb_plt <- leakage_sf_buffer_plt +
