@@ -19,7 +19,7 @@ Two leakage channels are estimated:
 
 ## How to Replicate the Figures
 
-**Requirements:** R ≥ 4.2, with packages: `tidyverse`, `ggplot2`, `patchwork`, `sf`, `glue`, `ggtext`, `igraph`, `scales`, `INLA`, `arrow`, `readxl`
+**Requirements:** R ≥ 4.2, with packages: `tidyverse`, `ggplot2`, `patchwork`, `sf`, `glue`, `ggtext`, `igraph`, `scales`, `INLA`, `arrow`
 
 To install INLA:
 ```r
@@ -37,6 +37,40 @@ source("scripts/05_replicate_figures.R")
 ```
 
 The optional `ggmagnify` package adds a zoom inset to the coefficient plot. Install with `remotes::install_github("hughjonesd/ggmagnify")` if desired; it is not required.
+
+---
+
+## Running Scripts 01–03 on HPC
+
+Scripts 01–03 are designed for a PBS/Torque job array. Before submitting jobs, install the required packages to a user-writable library (HPC clusters typically do not allow system-wide installs):
+
+```r
+lib_loc <- "~/r_lib"
+
+packages <- c(
+  "units", "codetools", "chk", "backports",  # base dependencies
+  "dplyr", "tidyr", "readr", "stringr", "purrr", "glue",
+  "sf", "terra", "raster", "fasterize",
+  "arrow", "geoarrow",
+  "exactextractr",
+  "MatchIt", "randomForest",
+  "INLA"
+)
+
+new.packages <- packages[!(packages %in% installed.packages(lib = lib_loc)[, "Package"])]
+if (length(new.packages)) {
+  install.packages(new.packages, lib = lib_loc, repos = "https://cloud.r-project.org")
+}
+# INLA must be installed separately:
+install.packages("INLA",
+  lib = lib_loc,
+  repos = c(getOption("repos"), INLA = "https://inla.r-inla-download.org/R/stable")
+)
+```
+
+Then add `lib.loc = lib_loc` to `library()` calls, or set `.libPaths(lib_loc)` at the top of each script before sourcing.
+
+Each script reads the home directory from the `home` variable near the top — set this to your HPC home path before submitting (e.g. `home <- "/mnt/hpccs01/home/<your-username>"`).
 
 ---
 
@@ -64,7 +98,7 @@ forestry_leakage_rep/
 ├── ext_data/
 │   └── *.xlsx                              ABARES log production data (used in Figure 1)
 │
-└── plots/                                  Output figures (pre-populated with existing outputs)
+└── plots/                                  Output figures (Figures 1–3 pre-populated; run Script 05 for all six)
 ```
 
 ---
