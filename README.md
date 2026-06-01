@@ -1,6 +1,6 @@
 # Replication Package: Forestry Leakage in NSW State Forests
 
-**Paper:** Cho, F. (2026). *Leakage from State Forest Revocations in New South Wales: A Quasi-Experimental Analysis.*
+**Paper:** Cho, F. H. T., Rhodes, J. R., Maron, M., Lunney, D., Iftekhar, M. S., McIlwee, A., Williams, B. A. (forthcoming). *Leakage effects of establishing protected areas in multi-use forests*
 
 ---
 
