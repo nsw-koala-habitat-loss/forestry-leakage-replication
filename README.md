@@ -126,8 +126,8 @@ The following raw input data are required to run Scripts 01–04 from scratch bu
 
 | Data | Source | Used in |
 |---|---|---|
-| SLATS deforestation rasters (1988–2020) | NSW Department of Planning and Environment — [Statewide Landcover and Trees Study](https://datasets.seed.nsw.gov.au/) | Script 01 |
-| Woody vegetation annual layers (1988–2020) | Derived from SLATS; contact authors | Script 01 |
+| SLATS deforestation rasters (1988–2014) | NSW Department of Climate Change, Energy, the Environment and Water — [Statewide Landcover and Trees Study](https://datasets.seed.nsw.gov.au/) ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); © State Government of NSW and NSW Department of Climate Change, Energy, the Environment and Water) | Script 01 |
+| Woody vegetation annual layers (1988–2014) | Derived from SLATS; contact authors | Script 01 |
 | Covariate rasters (25+ layers: land use, ecological condition, climate, etc.) | Various NSW government spatial data portals | Script 01 |
 | NSW LGA boundary shapefile | [ABS](https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files) | Script 01 |
 | NPWS protected area boundaries | [NSW National Parks and Wildlife Service](https://datasets.seed.nsw.gov.au/) | Script 02 |
