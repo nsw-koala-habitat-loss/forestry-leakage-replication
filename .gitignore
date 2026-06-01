@@ -1,0 +1,15 @@
+# Data directory (large files, not tracked)
+data/
+
+# Claude-related files
+CLAUDE.md
+.claude/
+
+# R artifacts
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+
+# macOS
+.DS_Store
