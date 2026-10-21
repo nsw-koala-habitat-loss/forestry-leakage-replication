@@ -388,7 +388,9 @@ matchit_param <- function(unmatch_data_obj, formula, ...) {
     filter(between(year, focal_rev_year - 5, focal_rev_year + 5)) %>%
     mutate(
       t = year - focal_rev_year,
-      BA = if_else(year >= focal_rev_year, 1, 0),
+      # focal_rev_year itself is dropped just below (filter(t != 0)); `>` keeps
+      # the before/after split unambiguous if that filter is ever relaxed.
+      BA = if_else(year > focal_rev_year, 1, 0),
       CI = if_else(treat == 1, 1, 0)
     ) %>%
     filter(t != 0) %>%
@@ -624,7 +626,11 @@ match_buffer <- function(
     PA_names <- names(dplyr::select(matching_df, starts_with("PA_")))
     PA_years <- as.numeric(str_split_i(PA_names, "_", 2))
     PA_lyr_i <- PA_names[match(start_year, PA_years)] %||% "PA_1988"
-    PA_lyr_j <- PA_names[match(focal_rev_year + 4, PA_years)] %||% "PA_2016"
+    # Screen on the PA layer covering the end of the BACI panel (focal_rev_year
+    # + 5). The annual PA layers are cumulative (protected_areas.R: GAZ_YEAR <
+    # year, never de-gazetted), so PA_{y} flags every cell gazetted on/before
+    # y - 1; PA_{focal_rev_year + 6} drops any cell protected through the panel end.
+    PA_lyr_j <- PA_names[match(focal_rev_year + 6, PA_years)] %||% "PA_2016"
 
     matching_df_woody_veg <- matching_df %>%
       filter(!!sym(woody_veg_lyr_i) > 0 & !!sym(PA_lyr_j) < 0.5) %>%
@@ -884,8 +890,15 @@ match_neighbour <- function(
       woody_veg_years - focal_rev_year
     ))]
 
+    # Protected-area screen, as in match_buffer: PA layer covering the end of the
+    # BACI panel. Layers are cumulative, so PA_{focal_rev_year + 6} flags any cell
+    # protected through the panel end. Applied to treated and donor plots alike.
+    PA_names <- names(dplyr::select(matching_df, starts_with("PA_")))
+    PA_years <- as.numeric(str_split_i(PA_names, "_", 2))
+    PA_lyr_j <- PA_names[match(focal_rev_year + 6, PA_years)] %||% "PA_2016"
+
     matching_df_woody_veg <- matching_df %>%
-      filter(!!sym(woody_veg_lyr_i) > 0) %>%
+      filter(!!sym(woody_veg_lyr_i) > 0 & !!sym(PA_lyr_j) < 0.5) %>%
       dplyr::select(plot_id) %>%
       collect()
 
@@ -970,7 +983,9 @@ match_neighbour <- function(
       st_intersects_subset(
         filter(
           state_forests_clean,
-          is.na(revocation_year) | revocation_year > (focal_rev_year + 4)
+          # intact through the end of the BACI panel (focal_rev_year + 5),
+          # matching state_forests_current used for focal_treated above
+          is.na(revocation_year) | revocation_year > (focal_rev_year + 5)
         ),
         within = TRUE
       ) %>%
@@ -987,7 +1002,8 @@ match_neighbour <- function(
       mutate(
         WoodyVeg = !!sym(woody_veg_lyr_i),
         WoodyVegTreat = !!sym(woody_veg_lyr_j),
-        WoodyVegDelta = !!sym(woody_veg_lyr_i) - !!sym(woody_veg_lyr_j)
+        WoodyVegDelta = !!sym(woody_veg_lyr_i) - !!sym(woody_veg_lyr_j),
+        PA_Final = !!sym(PA_lyr_j)
       ) %>%
       collect()
 
@@ -1020,6 +1036,7 @@ match_neighbour <- function(
         treat = treat == "treatment",
         woody_veg_start = !!sym(woody_veg_lyr_i)
       ) %>%
+      filter(PA_Final < 0.5) %>%
       drop_na(treat, woody_veg_start, any_of(all.vars(formula)))
 
     matching_data_out <- list(

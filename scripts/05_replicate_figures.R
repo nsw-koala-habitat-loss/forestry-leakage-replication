@@ -22,6 +22,7 @@
 #   focal_sf_plt.png            — Figure 4: Spatial map of leakage effects
 #   comb_coef_sf_plt.png        — Figure 5: Combined dashboard
 #   cumulative_avg_dist_plt.png — Figure 6: Cumulative and average effects
+#   cumulative_avg_leakage_plt.png — Figure 6 companion: average leakage multiplier
 # =============================================================================
 
 library(ggplot2)
@@ -52,7 +53,7 @@ plot_tag_theme <- function() {
   ))
 }
 
-scale <- 2e-1
+scale <- .5e-1
 
 # ── Figure 1: State forest revocations and log harvests ──────────────────────
 total_revocations <- focal_sf %>%
@@ -77,8 +78,7 @@ total_revocations <- focal_sf %>%
     woody_veg_start_ha = 0,
     total_area_ha = 0
   )) %>%
-  left_join(abares_prod, by = join_by("year" == "Year")) %>%
-  mutate(se = 0)
+  left_join(abares_prod, by = join_by("year" == "Year"))
 
 total_revocations_plt <- total_revocations %>%
   ggplot(aes(x = year)) +
@@ -86,24 +86,15 @@ total_revocations_plt <- total_revocations %>%
   geom_vline(xintercept = 1998, linetype = 2) +
   geom_vline(xintercept = 2005, linetype = 2) +
   geom_bar(aes(y = total_area_ha), stat = "identity", fill = "#e69F00") +
-  geom_line(aes(y = total_prod * scale, colour = run)) +
-  geom_ribbon(
-    aes(
-      ymin = (total_prod - se) * scale,
-      ymax = (total_prod + se) * scale,
-      fill = run
-    ),
-    alpha = 0.2
-  ) +
-  scale_color_viridis_d("Wood type", na.translate = FALSE) +
-  scale_fill_viridis_d(guide = "none") +
+  geom_line(aes(y = total_prod * scale), color = "gray20") +
+  geom_point(aes(y = total_prod * scale), color = "gray20") +
   theme_bw() +
   scale_y_continuous(
     "Woody vegetation in\nrevoked area (ha)",
     labels = scales::label_number(scale = 1e-3, suffix = "K"),
     expand = expansion(mult = c(0.02, 0.1)),
     sec.axis = sec_axis(
-      trans = ~ . / scale,
+      transform = ~ . / scale,
       name = expression("Total Volume of Logs Harvested (m^3)"),
       labels = scales::label_number(scale = 1e-6, suffix = "M")
     )
@@ -150,6 +141,14 @@ coef_plot <- baci_model_est %>%
   scale_fill_manual(values = c("gray70", "white")) +
   guides(fill = "none") +
   labs(x = "", title = "Model Coefficient Estimates") +
+  coord_cartesian(
+    xlim = c(min(total_revocations$year), max(total_revocations$year))
+  ) +
+  theme_bw() +
+  theme(
+    panel.grid = element_blank(),
+    axis.ticks.x = element_line(linewidth = 1)
+  ) +
   plot_tag_theme()
 
 if (has_ggmagnify) {
@@ -222,6 +221,15 @@ tteph_plt <- leakage_multiplier_df %>%
   theme(panel.grid = element_blank()) +
   plot_tag_theme() +
   labs(title = "Leakage per hectare of new protected area")
+
+if (has_ggmagnify) {
+  tteph_plt <- tteph_plt +
+    ggmagnify::geom_magnify(
+      from = c(xmin = 1998.7, xmax = 2003.5, ymin = -0.05, ymax = .03),
+      to = c(xmin = 2005, xmax = 2014, ymin = 1, ymax = 5),
+      axes = "xy"
+    )
+}
 
 # Panel D: Leakage multiplier (%)
 leakage_mult_plt <- leakage_multiplier_df %>%
@@ -309,7 +317,7 @@ cum_clearing_plt_func <- function(specified_run, years) {
     geom_ribbon(aes(ymin = lb, ymax = ub), alpha = 0.4) +
     geom_vline(xintercept = 0, linetype = 2, color = "gray50") +
     geom_line(aes(color = group), linewidth = 1) +
-    facet_wrap(vars(year_annotated), scales = "free_y", ncol = 5) +
+    facet_wrap(vars(year_annotated), scales = "free_y", ncol = 3) +
     theme_bw() +
     scale_y_continuous("Cumulative area cleared for forestry (ha)") +
     scale_x_continuous("Year from treatment year", breaks = -5:5) +
@@ -318,6 +326,7 @@ cum_clearing_plt_func <- function(specified_run, years) {
     theme(
       panel.grid = element_blank(),
       strip.text = element_markdown(),
+      strip.text.y.left = element_text(angle = 0),
       strip.background = element_rect(fill = "gray95", color = "gray50")
     )
 }
@@ -325,18 +334,17 @@ cum_clearing_plt_func <- function(specified_run, years) {
 years_vec <- sort(as.numeric(unique(cum_clearing_all_matches_df$year)))
 
 cum_clearing_plt <- ((cum_clearing_plt_func("buffer", years_vec) +
-  ggtitle("Leakage to Private Lands")) /
+  ggtitle("Leakage to Private Lands")) |
   (cum_clearing_plt_func("neighbour", years_vec) +
     ggtitle("Leakage to State Forests"))) +
   plot_layout(guides = "collect") &
-  plot_annotation(tag_levels = "A") &
   theme(legend.position = "bottom")
 
 ggsave(
   "plots/cum_clearing_year_plt.png",
   cum_clearing_plt,
-  width = 3000,
-  height = 3000,
+  width = 3500,
+  height = 2500,
   units = "px"
 )
 
@@ -580,13 +588,13 @@ sf_area_info <- woody_veg_area %>%
   left_join(leakage_sf_tidy) %>%
   dplyr::select(run, year, woody_veg_area_ha, woody_veg_leakage_zone_ha)
 
+# Figure 6 scales the AME proportion to the whole zone:
+# leakage_ha = prop * woody_veg_leakage_zone_ha  (prop from generate_ame_irr).
 tte_dist <- ame_mdls %>%
-  map(~ pull(., "delta_area")) %>%
+  map(~ pull(., "prop")) %>%
   bind_rows(.id = "run") %>%
   mutate(id = row_number()) %>%
-  pivot_longer(cols = -id, values_to = "sample_effect") %>%
-  left_join(woody_veg_ha_sample, by = join_by("name" == "run_id")) %>%
-  mutate(tte_prop = sample_effect / woody_veg_ha) %>%
+  pivot_longer(cols = -id) %>%
   separate(name, c("run", "year")) %>%
   rename_run() %>%
   mutate(year = as.numeric(year)) %>%
@@ -594,32 +602,86 @@ tte_dist <- ame_mdls %>%
     sf_area_info,
     c("woody_veg_area_ha", "woody_veg_leakage_zone_ha", "run", "year")
   )) %>%
-  mutate(
-    tteph = tte_prop * woody_veg_leakage_zone_ha / woody_veg_area_ha,
-    tte = tte_prop * woody_veg_leakage_zone_ha
-  ) %>%
+  left_join(dplyr::select(
+    focal_sf_tidy %>% mutate(year = as.double(year)),
+    c("five_year_clearing_ha", "year")
+  )) %>%
+  mutate(tteph = value * woody_veg_leakage_zone_ha / woody_veg_area_ha) %>%
+  mutate(leakage = value * woody_veg_leakage_zone_ha) %>%
   group_by(run, id) %>%
   left_join(mutate(rename_run(matchit_criteria), year = as.numeric(year)))
 
-tte_year <- tte_dist %>%
+# Average leakage multiplier: sum delta_area over years, then / summed avoided clearing.
+average_leakage_multiplier <- ame_mdls %>%
+  map(~ pull(., "delta_area")) %>%
+  bind_rows(.id = "run") %>%
+  mutate(id = row_number()) %>%
+  pivot_longer(cols = -id) %>%
+  separate(name, c("run", "year")) %>%
+  rename_run() %>%
+  mutate(year = as.numeric(year)) %>%
+  left_join(dplyr::select(
+    sf_area_info,
+    c("woody_veg_area_ha", "woody_veg_leakage_zone_ha", "run", "year")
+  )) %>%
+  left_join(dplyr::select(
+    focal_sf_tidy %>% mutate(year = as.double(year)),
+    c("five_year_clearing_ha", "year")
+  )) %>%
+  mutate(leakage = value * woody_veg_leakage_zone_ha / woody_veg_area_ha) %>%
   group_by(run, id) %>%
-  arrange(year) %>%
+  left_join(mutate(rename_run(matchit_criteria), year = as.numeric(year))) %>%
+  group_by(run, id) %>%
+  summarize(
+    leakage = sum(leakage),
+    five_year_clearing_ha = sum(five_year_clearing_ha)
+  ) %>%
+  mutate(leakage_multiplier = leakage / five_year_clearing_ha) %>%
+  ungroup()
+
+average_leakage_multiplier_summary <- average_leakage_multiplier %>%
+  group_by(run) %>%
+  summarize(
+    pct0025 = quantile(leakage_multiplier, 0.025),
+    pct05 = quantile(leakage_multiplier, 0.5),
+    pct0975 = quantile(leakage_multiplier, 0.975)
+  )
+
+leakage_avg_plt <- ggplot(
+  average_leakage_multiplier,
+  aes(x = leakage_multiplier)
+) +
+  geom_vline(xintercept = 0, color = "gray50", linetype = 2) +
+  geom_density(aes(color = run)) +
+  geom_density(aes(fill = run), alpha = 0.2, color = NA) +
+  scale_color_manual("Group", values = c("#0072B2", "#D55E00")) +
+  scale_fill_manual("Group", values = c("#0072B2", "#D55E00")) +
+  theme_bw() +
+  scale_x_continuous("Leakage", labels = scales::label_percent()) +
+  theme(panel.grid = element_blank(), legend.position = "bottom") +
+  ggtitle(
+    "Distribution of the Average Leakage effect\nrelative to reduction in harvests"
+  )
+
+ggsave(
+  "plots/cumulative_avg_leakage_plt.png",
+  leakage_avg_plt,
+  dpi = 300,
+  width = 2000,
+  height = 1500,
+  units = "px"
+)
+
+tte_year <- tte_dist %>%
   mutate(
-    tteph_cum = cumsum(tteph * woody_veg_area_ha) / cumsum(woody_veg_area_ha),
-    tte_cum = cumsum(sample_effect)
+    tteph_cum = cumsum(tteph * woody_veg_area_ha) / cumsum(woody_veg_area_ha)
   ) %>%
   group_by(run, year) %>%
   summarise(
     tteph_cum_lb = quantile(tteph_cum, 0.025),
     tteph_cum_median = quantile(tteph_cum, 0.5),
-    tteph_cum_ub = quantile(tteph_cum, 0.975),
-    tte_cum_lb = quantile(tte_cum, 0.025),
-    tte_cum_median = quantile(tte_cum, 0.5),
-    tte_cum_ub = quantile(tte_cum, 0.975)
+    tteph_cum_ub = quantile(tteph_cum, 0.975)
   )
-
-ylim_cum <- c(-0.025, 0.1)
-ylim_cum_tte <- c(-2200, 1300)
 
 cumulative_plt <- ggplot(tte_year, aes(x = year, y = tteph_cum_median)) +
   geom_hline(yintercept = 0, color = "gray50", linetype = 2) +
@@ -629,51 +691,32 @@ cumulative_plt <- ggplot(tte_year, aes(x = year, y = tteph_cum_median)) +
   ) +
   geom_point(aes(color = run), size = 2) +
   geom_line(aes(color = run)) +
-  scale_fill_manual("", values = c("#0072B2", "#D55E00")) +
-  scale_color_manual("", values = c("#0072B2", "#D55E00")) +
-  scale_y_continuous("Total Treatment\nEffect per ha") +
+  scale_fill_manual("Group", values = c("#0072B2", "#D55E00")) +
+  scale_color_manual("Group", values = c("#0072B2", "#D55E00")) +
+  scale_y_continuous("Total Treatment\nEffect per Hectare") +
   scale_x_continuous("Year", breaks = seq(1995, 2014, 2)) +
-  coord_cartesian(ylim = ylim_cum) +
+  coord_cartesian(ylim = c(-.1, .25)) +
   ggtitle("Cumulative Weighted Average Effect") +
   theme_bw() +
   theme(panel.grid = element_blank())
 
-cumulative_tte_plt <- ggplot(tte_year, aes(x = year, y = tte_cum_median)) +
-  geom_hline(yintercept = 0, color = "gray50", linetype = 2) +
-  geom_ribbon(
-    aes(ymin = tte_cum_lb, ymax = tte_cum_ub, group = run, fill = run),
-    alpha = 0.3
-  ) +
-  geom_point(aes(color = run), size = 2) +
-  geom_line(aes(color = run)) +
-  scale_fill_manual("", values = c("#0072B2", "#D55E00")) +
-  scale_color_manual("", values = c("#0072B2", "#D55E00")) +
-  scale_y_continuous("Total Treatment\nEffect") +
-  scale_x_continuous("Year", breaks = seq(1995, 2014, 2)) +
-  coord_cartesian(ylim = ylim_cum_tte) +
-  ggtitle("Cumulative Total Treatment Effect") +
-  theme_bw() +
-  theme(
-    panel.grid = element_blank(),
-    axis.title.x = element_blank(),
-    axis.ticks.x = element_blank(),
-    axis.text.x = element_blank()
+avg_dist <- tte_dist %>%
+  group_by(run, id) %>%
+  summarise(
+    tteph = sum(tteph * woody_veg_area_ha) / sum(woody_veg_area_ha)
   )
 
-avg_dist <- tte_dist %>%
-  summarise(
-    tteph = sum(tteph * woody_veg_area_ha) / sum(woody_veg_area_ha),
-    tte = sum(sample_effect)
-  )
+pct_positive <- avg_dist %>%
+  summarise(leakage = mean(tteph > 0))
 
 avg_dist_plt <- avg_dist %>%
   ggplot(aes(y = tteph)) +
   geom_hline(yintercept = 0, color = "gray50", linetype = 2) +
   geom_density(aes(color = run)) +
   geom_density(aes(fill = run), alpha = 0.2, color = NA) +
-  ylim(ylim_cum) +
-  scale_color_manual("", values = c("#0072B2", "#D55E00")) +
-  scale_fill_manual("", values = c("#0072B2", "#D55E00")) +
+  ylim(c(-.1, .25)) +
+  scale_color_manual("Group", values = c("#0072B2", "#D55E00")) +
+  scale_fill_manual("Group", values = c("#0072B2", "#D55E00")) +
   theme_bw() +
   guides(color = "none", fill = "none") +
   scale_x_continuous("Density") +
@@ -685,43 +728,18 @@ avg_dist_plt <- avg_dist %>%
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank()
   ) +
-  ggtitle("Average Effect per ha")
+  ggtitle("Weighted Average\nEffect")
 
-avg_dist_tte_plt <- avg_dist %>%
-  ggplot(aes(y = tte)) +
-  geom_hline(yintercept = 0, color = "gray50", linetype = 2) +
-  geom_density(aes(color = run)) +
-  geom_density(aes(fill = run), alpha = 0.2, color = NA) +
-  ylim(ylim_cum_tte) +
-  scale_color_manual("", values = c("#0072B2", "#D55E00")) +
-  scale_fill_manual("", values = c("#0072B2", "#D55E00")) +
-  theme_bw() +
-  guides(color = "none", fill = "none") +
-  scale_x_continuous("") +
-  theme(
-    panel.grid = element_blank(),
-    axis.title.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    axis.text.y = element_blank(),
-    axis.text.x = element_blank(),
-    axis.ticks.x = element_blank()
-  ) +
-  ggtitle("Total Treatment Effect")
-
-cumulative_avg_dist_plt <- (cumulative_tte_plt +
-  avg_dist_tte_plt +
-  cumulative_plt +
-  avg_dist_plt) +
+cumulative_avg_dist_plt <- (cumulative_plt | avg_dist_plt) +
   plot_layout(guides = "collect", widths = c(0.7, 0.3)) &
-  plot_annotation(tag_levels = "A") &
   theme(legend.position = "bottom")
 
 ggsave(
   "plots/cumulative_avg_dist_plt.png",
   cumulative_avg_dist_plt,
   dpi = 300,
-  width = 2500,
-  height = 2500,
+  width = 2000,
+  height = 1500,
   units = "px"
 )
 

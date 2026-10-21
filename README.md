@@ -19,7 +19,7 @@ Two leakage channels are estimated:
 
 ## How to Replicate the Figures
 
-**Requirements:** R ≥ 4.2, with packages: `tidyverse`, `ggplot2`, `patchwork`, `sf`, `glue`, `ggtext`, `igraph`, `scales`, `INLA`, `arrow`
+**Requirements:** R ≥ 4.2, with packages: `tidyverse`, `ggplot2`, `patchwork`, `sf`, `glue`, `ggtext`, `igraph`, `scales`, `INLA`, `arrow`. Script 06b additionally needs `gt` and `openxlsx` (for the formatted `.xlsx`; `writexl` gives an unformatted fallback); `ggmagnify` is optional (magnifier insets in Figures 2/5).
 
 To install INLA:
 ```r
@@ -84,9 +84,15 @@ forestry_leakage_rep/
 │   ├── ame.R                      Average Marginal Effect (AME) calculation
 │   ├── 01_extract_covariates.R    [Reference] Extract pixel-level covariates (HPC)
 │   ├── 02_matching_pairing.R      [Reference] Propensity-score matching (HPC)
+│   ├── 02b_woody_vegetation_areas.R [Reference] Woody-veg areas + on-site avoided clearing (HPC)
 │   ├── 03_matching_estimation.R   [Reference] BACI estimation via INLA (HPC)
 │   ├── 04_process_results.R       [Reference] Aggregate model outputs
-│   └-─ 05_replicate_figures.R     ← START HERE: generate all figures
+│   ├── 05_replicate_figures.R     ← START HERE: generate all figures
+│   ├── 06_figure5_redesign.R      Alternative 2-panel Figure 5
+│   ├── 06b_figure5_derivation_table.R  Leakage-multiplier derivation table + heatmap
+│   ├── 06c_figure5_prototype_absolute.R Prototype absolute-ha panels for Figure 5
+│   ├── 07_figure4_parallel_trends.R    Re-based Figure 4 parallel-trends check (R&R)
+│   └── 08a_export_match_map_inputs.R   [Reference] Export inputs for the matching-design map (authors only)
 │
 ├── data/
 │   ├── processed_data_for_plotting.RData    Pre-computed model outputs (103 MB)
@@ -95,7 +101,7 @@ forestry_leakage_rep/
 │   ├── state_forests/
 │   │   └── state_forests_revoked_update.gpkg  Revoked SF polygons with revocation year
 │   ├── focal_state_forest_gpkg/
-│   │   └── focal_sf_year.gpkg              Focal SF polygons with woody veg area estimates
+│   │   └── focal_sf_year.gpkg              Focal SF polygons: woody veg area + on-site avoided clearing (from Script 02b)
 │   └── matching_data/
 │       ├── README.md                        Column reference for matching data files
 │       └── parquet/
@@ -104,7 +110,7 @@ forestry_leakage_rep/
 ├── ext_data/
 │   └── *.xlsx                              ABARES log production data (used in Figure 1)
 │
-└── plots/                                  Output figures (Figures 1–3 pre-populated; run Script 05 for all six)
+└── plots/                                  Output figures (Figures 1–3 pre-populated; run Script 05 for all)
 ```
 
 ---
@@ -147,10 +153,31 @@ Loads `data/processed_data_for_plotting.RData` and produces all paper figures:
 | Figure 3 | `plots/cum_clearing_year_plt.png` | Cumulative deforestation trajectories for treatment vs. control by revocation year |
 | Figure 4 | `plots/focal_sf_plt.png` | Spatial map of leakage estimates for each focal state forest |
 | Figure 5 | `plots/comb_coef_sf_plt.png` | Combined dashboard: key results and spatial maps |
-| Figure 6 | `plots/cumulative_avg_dist_plt.png` | Cumulative weighted-average treatment effect over time |
+| Figure 6 | `plots/cumulative_avg_dist_plt.png` | Cumulative and distribution of the weighted-average treatment effect per ha |
+| Figure 6 (companion) | `plots/cumulative_avg_leakage_plt.png` | Distribution of the average leakage multiplier (leakage relative to on-site avoided clearing) |
 
 Also produces:
 - `data/leakage_sf_tidy.gpkg` — Tidy spatial export of leakage estimates with credible intervals
+
+### `scripts/06_figure5_redesign.R` — Alternative Figure 5
+
+Runs from the same `data/processed_data_for_plotting.RData` as Script 05. Produces a 2-panel alternative to the Figure 5 dashboard — total leakage effect (ha) and leakage multiplier (%), with 95%-CI significance shown by point fill (`plots/figure5_redesign.png`). Reuses Script 04's `leakage_multiplier_df`, so the numbers match the main Figure 5.
+
+### `scripts/06b_figure5_derivation_table.R` — Leakage-multiplier derivation table
+
+Companion to Script 06. Writes a step-by-step derivation table (`plots/figure5_derivation_table.html` / `.png`, plus a formatted `.xlsx` via `openxlsx`, or a plain sheet via `writexl`) and a year × channel heatmap (`plots/figure5_derivation_heatmap.png`). Runs from `data/processed_data_for_plotting.RData`; needs `gt`.
+
+### `scripts/07_figure4_parallel_trends.R` — Re-based Figure 4 (R&R)
+
+Draws a re-based version of Figure 4: both arms set to 0 the year before revocation, y-axis cumulative clearing as a % of plot woody vegetation — the quantity the parallel-trends test evaluates. Panels are flagged where the selected matched specification fails the pre-trend criterion. Runs from `data/processed_data_for_plotting.RData` (`plots/fig4_parallel_trends.png`).
+
+### `scripts/06c_figure5_prototype_absolute.R` — Absolute-ha Figure 5 prototypes
+
+Candidate replacements for panel A of Script 06 that keep the leakage effect in hectares (cumulative and per-year variants). Runs from the shipped `.RData`; writes `plots/figure5_absolute_prototypes.png`.
+
+### `scripts/08a_export_match_map_inputs.R` — Matching-design map inputs [Reference]
+
+Run once by the authors on the full analysis outputs; it uses hard-coded HPC paths and cannot be run from this package. It exports the cropped layers for the matching-design map to `data/match_map/`. The companion plotting script (Script 08) and `data/match_map/` are not yet included in this package.
 
 ### `scripts/04_process_results.R` — Data aggregation [Reference]
 
@@ -158,11 +185,17 @@ Loads raw INLA model RDS files and matching outputs; computes AME, leakage multi
 
 ### `scripts/03_matching_estimation.R` — BACI estimation [Reference]
 
-Fits negative-binomial INLA models with BACI design for each revocation year and leakage channel. Also runs 1–10 km distance sensitivity analysis. Requires matched pair Parquet files from Script 02.
+Fits negative-binomial INLA models with BACI design for each revocation year and leakage channel. Also runs 1–10 km distance sensitivity analysis and writes cumulative-clearing trajectories for all 19 matching specs (Figure 3 input). Requires matched pair Parquet files from Script 02 and `focal_sf_year.gpkg` from Script 02b.
+
+### `scripts/02b_woody_vegetation_areas.R` — Woody-vegetation areas [Reference]
+
+Ported from the human-written `woody_veg_calc.R`. From the annual woody-vegetation and SLATS rasters, computes for each focal state forest: woody vegetation inside the forest at the revocation year (`woody_area_start_m2`), on-site avoided clearing (`five_year_clearing_ha` = class-4 clearing in the 5 years before revocation minus the 5 years after), and woody vegetation inside the 10 km leakage belt (`year_run_df.csv`). Writes `focal_sf_year.gpkg` (shipped pre-computed). Requires the full upstream rasters.
 
 ### `scripts/02_matching_pairing.R` — Propensity-score matching [Reference]
 
 For each revoked state forest, constructs treatment and control groups and runs 19 MatchIt specifications. Selects the best specification using parallel trends, SMD balance, and proportion-retained criteria. Requires the full covariate Parquet files from Script 01.
+
+> **Protected-area screen (updated 2026-08).** The PA screen now uses the layer covering the end of the BACI panel — `PA_{revocation_year + 6}` (the annual layers are cumulative: `PA_{y}` = gazetted on/before `y − 1`), was `+ 4` — and is applied to the **neighbour** channel as well as the buffer channel; the neighbour donor-pool "intact state forest" cutoff moved from `revocation_year + 4` to `+ 5` to match. This changes no leakage-multiplier median by more than ~1.1 pp and flips no significance call (buffer 0.6 % / neighbour 1.5 % of matched plots dropped). **`data/processed_data_for_plotting.RData` and `plots/` reflect this correction**, applied post-hoc — protected plots were dropped from the shipped matched pairs and the BACI + AME models re-fit — since re-running the matching itself needs the HPC raster/shapefile inputs. `data/pa_correction_*.csv` records the dropped-plot counts and the shipped-vs-corrected multiplier comparison. A from-scratch HPC run of the corrected Scripts 02–04 (with re-matching) is the exact version.
 
 ### `scripts/01_extract_covariates.R` — Covariate extraction [Reference]
 
@@ -198,6 +231,15 @@ The analysis uses a **Difference-in-Differences / BACI** design:
 - **Proportion retained**: ≥ 80% of treated units matched
 
 ---
+
+## Data archive and licence
+
+- **Data archive:** the files in `data/` are not tracked in this repository (about 1.6 GB). They are deposited at Zenodo: **DOI: [TO BE ADDED ON DEPOSIT]**. Download and unpack the archive into `data/` before running any script.
+- **Licence:** see [LICENSE](LICENSE) (code). Data terms are stated in the Zenodo record; third-party inputs keep their original licences (see "Data not included" above).
+
+## Computing environment
+
+Figures were produced with R 4.6.1 on macOS (aarch64-apple-darwin23). Scripts 01–04 were run on an HPC cluster. The full `sessionInfo()` for the figure scripts is in [`sessionInfo.txt`](sessionInfo.txt). Package versions are not pinned with `renv`.
 
 ## Citation
 
