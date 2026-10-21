@@ -1,11 +1,21 @@
-PLACEHOLDER - LICENCE NOT YET CHOSEN. Delete this file's contents and replace
-with the full text of one of the options below before making the repo public.
-
-Options for the code (pick one, confirm with co-authors / Monash+QUT IP policy):
-  1. MIT         - permissive; only requires keeping the copyright notice.
-  2. GPL-3.0     - copyleft; derivative code must stay open.
-  3. Apache-2.0  - permissive, with an explicit patent grant.
-Data (Zenodo): CC BY 4.0 is the usual choice; NSW-sourced layers (SLATS, CC BY 4.0;
-State Forests, CC0) are compatible.
+MIT License
 
 Copyright (c) 2026 Frankie H. T. Cho and co-authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

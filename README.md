@@ -235,7 +235,7 @@ The analysis uses a **Difference-in-Differences / BACI** design:
 ## Data archive and licence
 
 - **Data archive:** the files in `data/` are not tracked in this repository (about 1.6 GB). They are deposited at Zenodo: **DOI: [TO BE ADDED ON DEPOSIT]**. Download and unpack the archive into `data/` before running any script.
-- **Licence:** see [LICENSE](LICENSE) (code). Data terms are stated in the Zenodo record; third-party inputs keep their original licences (see "Data not included" above).
+- **Licence:** code is released under the MIT licence, see [LICENSE](LICENSE). Data terms are stated in the Zenodo record; third-party inputs keep their original licences (see "Data not included" above).
 
 ## Computing environment
 
