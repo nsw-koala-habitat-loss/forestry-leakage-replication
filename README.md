@@ -91,8 +91,7 @@ forestry_leakage_rep/
 │   ├── 06_figure5_redesign.R      Alternative 2-panel Figure 5
 │   ├── 06b_figure5_derivation_table.R  Leakage-multiplier derivation table + heatmap
 │   ├── 06c_figure5_prototype_absolute.R Prototype absolute-ha panels for Figure 5
-│   ├── 07_figure4_parallel_trends.R    Re-based Figure 4 parallel-trends check (R&R)
-│   └── 08a_export_match_map_inputs.R   [Reference] Export inputs for the matching-design map (authors only)
+│   └── 07_figure4_parallel_trends.R    Re-based Figure 4 parallel-trends check (R&R)
 │
 ├── data/
 │   ├── processed_data_for_plotting.RData    Pre-computed model outputs (103 MB)
@@ -174,10 +173,6 @@ Draws a re-based version of Figure 4: both arms set to 0 the year before revocat
 ### `scripts/06c_figure5_prototype_absolute.R` — Absolute-ha Figure 5 prototypes
 
 Candidate replacements for panel A of Script 06 that keep the leakage effect in hectares (cumulative and per-year variants). Runs from the shipped `.RData`; writes `plots/figure5_absolute_prototypes.png`.
-
-### `scripts/08a_export_match_map_inputs.R` — Matching-design map inputs [Reference]
-
-Run once by the authors on the full analysis outputs; it uses hard-coded HPC paths and cannot be run from this package. It exports the cropped layers for the matching-design map to `data/match_map/`. The companion plotting script (Script 08) and `data/match_map/` are not yet included in this package.
 
 ### `scripts/04_process_results.R` — Data aggregation [Reference]
 
