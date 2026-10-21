@@ -235,11 +235,11 @@ The analysis uses a **Difference-in-Differences / BACI** design:
 ## Data archive and licence
 
 - **Data archive:** the files in `data/` are not tracked in this repository (about 1.6 GB). They are deposited at Zenodo: **DOI: [TO BE ADDED ON DEPOSIT]**. Download and unpack the archive into `data/` before running any script.
-- **Licence:** code is released under the MIT licence, see [LICENSE](LICENSE). Data terms are stated in the Zenodo record; third-party inputs keep their original licences (see "Data not included" above).
+- **Licence:** code is released under the MIT licence, see [LICENSE](LICENSE). Data and derived outputs in `data/` (Zenodo) are released under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); third-party inputs keep their original licences (see "Data not included" above).
 
 ## Computing environment
 
-Figures were produced with R 4.6.1 on macOS (aarch64-apple-darwin23). Scripts 01–04 were run on an HPC cluster. The full `sessionInfo()` for the figure scripts is in [`sessionInfo.txt`](sessionInfo.txt). Package versions are not pinned with `renv`.
+Figures were produced with R 4.6.1 on macOS (aarch64-apple-darwin23). Scripts 01–04 were run on an HPC cluster. The full `sessionInfo()` for the figure scripts is in [`sessionInfo.txt`](sessionInfo.txt). Package versions are listed in `sessionInfo.txt` but not pinned with `renv`. Scripts 05, 06 and 07 each run cleanly in a fresh R session (`Rscript scripts/<name>.R` from the package root); run them as separate processes, because sourcing them in one session lets attached packages mask each other (`tidyr::crossing`) and Script 06 then fails.
 
 ## Citation
 
