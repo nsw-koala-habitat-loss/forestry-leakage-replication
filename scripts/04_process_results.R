@@ -156,7 +156,7 @@ if (file.exists(abares_xlsx)) {
   ) %>%
     filter(State == "New South Wales" & Category_1 == "Log production") %>%
     mutate(m3 = if_else(Units == "’000  m3", Value * 1000, Value)) %>%
-    group_by(Year, Category_2) %>%
+    group_by(Year) %>%
     summarise(total_prod = sum(m3))
 } else {
   warning(

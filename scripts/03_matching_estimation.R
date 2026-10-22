@@ -178,15 +178,8 @@ for (run in c("buffer", "neighbour")) {
   # Save matching data and summary
   write_csv(matching_df, glue("{OUTPUT_DIR}/plot_data/matching_df_{run}.csv"))
 
-  # Issue 6: write woody veg area per run/year for leakage multiplier (Script 04)
-  year_run_path <- file.path(OUTPUT_DIR, "plot_data/year_run_df.csv")
-  year_run_df_i <- matching_df %>%
-    filter(CI == 1) %>%
-    mutate(year = stringr::str_extract(site_group, "\\d{4}")) %>%
-    group_by(year) %>%
-    summarise(woody_veg_area = sum(woody_veg_start, na.rm = TRUE), .groups = "drop") %>%
-    mutate(run = run)
-  write_csv(year_run_df_i, year_run_path, append = file.exists(year_run_path))
+  # focal_sf_year.gpkg (read below, shipped in data/) and year_run_df.csv are
+  # written by 02b_woody_vegetation_areas.R, which runs between Scripts 02 and 03.
   write_csv(
     matchit_summary_df %>%
       filter(model_selected) %>%
@@ -264,6 +257,9 @@ for (run in c("buffer", "neighbour")) {
       BACI +
       offset(log(total_woody_cells))
 
+    # Seed before every inla() + generate_ame_irr() pair (matching_estimation.R:342):
+    # generate_ame_irr() draws 10,000 posterior samples, so this fixes the AME.
+    set.seed(435245)
     v <- inla(
       baci_formula,
       data = df_summarised,
@@ -350,6 +346,7 @@ for (run in c("buffer", "neighbour")) {
         ]
         df_dist <- filter(df_summarised, subclass %in% dist_subclasses)
 
+        set.seed(435245)  # as matching_estimation.R:399, before each AME draw
         v_dist <- inla(
           baci_formula,
           data = df_dist,
