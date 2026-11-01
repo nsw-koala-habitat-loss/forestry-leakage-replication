@@ -1,6 +1,6 @@
 # Replication Package: Forestry Leakage in NSW State Forests
 
-**Paper:** Cho, F. H. T., Rhodes, J. R., Maron, M., Lunney, D., Iftekhar, M. S., McIlwee, A., Williams, B. A. (forthcoming). *Leakage effects of establishing protected areas in multi-use forests*
+**Paper:** Cho, F. H. T., Rhodes, J. R., Maron, M., Lunney, D., Iftekhar, M. S., McIlwee, A., Williams, B. A. (2026). *Leakage effects of establishing protected areas in multi-use forests*. _Environ. Res. Lett._ https://doi.org/10.1088/1748-9326/aebbd6
 
 ---
 
